@@ -1,0 +1,9 @@
+{
+  "name": "abu-amjad-admin-api",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
