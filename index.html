@@ -825,7 +825,6 @@ document.querySelectorAll('.ad-slot').forEach(slot=>{slot.addEventListener('clic
    if(!propertySnap.empty){properties=propertySnap.docs.map(d=>({...d.data(),_cloudId:d.id}));localStorage.setItem('abu_properties',JSON.stringify(properties));renderProperties();}
    if(snap.exists){
      const cloud=snap.data()||{}; if(Array.isArray(cloud.ads)){localStorage.setItem('abu_ads',JSON.stringify(cloud.ads));applyAds(cloud.ads);}
-     try{for(let n=1;n<=2;n++){const adImageSnap=await firebaseDb.collection('abuAmjadSite').doc('adImage'+n).get();if(adImageSnap.exists){const adImage=adImageSnap.data()||{};if(adImage.imageData){const saved=JSON.parse(localStorage.getItem('abu_ads')||'[]').filter(a=>String(a.slot)!==String(n));saved.push({slot:String(n),title:adImage.title||'إعلان',url:adImage.imageData,updatedAt:adImage.updatedAt||''});localStorage.setItem('abu_ads',JSON.stringify(saved));applyAds(saved);}}}}catch(adLoadErr){console.warn('تعذر تحميل صور الإعلانات السحابية',adLoadErr)}
      if(Array.isArray(cloud.menuItems)){menuItems=cloud.menuItems;localStorage.setItem('abu_menu_items',JSON.stringify(menuItems));}
      if(Array.isArray(cloud.properties)&&propertySnap.empty){properties=cloud.properties;localStorage.setItem('abu_properties',JSON.stringify(properties));}
      if(Array.isArray(cloud.consultationRequests)){consultationRequests=cloud.consultationRequests;localStorage.setItem('abu_consultation_requests',JSON.stringify(consultationRequests));} if(Array.isArray(cloud.siteSections)){siteSections=cloud.siteSections;localStorage.setItem('abu_site_sections',JSON.stringify(siteSections));}
@@ -836,6 +835,21 @@ document.querySelectorAll('.ad-slot').forEach(slot=>{slot.addEventListener('clic
      // First run: seed the new works gallery and migrate content to the cloud.
      ensureWorksGallery(false);renderWorksGallery();await syncPropertyDocuments();
      await CLOUD_DOC.set({menuItems,properties:properties.map(({images,image,...rest})=>({...rest,images:[],image:''})),consultationRequests,siteSections,ads:(()=>{try{return JSON.parse(localStorage.getItem('abu_ads')||'[]')}catch{return []}})(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+   }
+   // قراءة صور الإعلانات بعد التهيئة العادية أو التهيئة الأولى للسحابة.
+   for(let n=1;n<=2;n++){
+     try{
+       const adImageSnap=await firebaseDb.collection('abuAmjadSite').doc('adImage'+n).get();
+       if(adImageSnap.exists){
+         const adImage=adImageSnap.data()||{};
+         if(adImage.imageData){
+           const saved=JSON.parse(localStorage.getItem('abu_ads')||'[]').filter(a=>String(a.slot)!==String(n));
+           saved.push({slot:String(n),title:adImage.title||'إعلان',url:adImage.imageData,updatedAt:adImage.updatedAt||''});
+           localStorage.setItem('abu_ads',JSON.stringify(saved));
+           applyAds(saved);
+         }
+       }
+     }catch(adLoadErr){console.warn('تعذر تحميل صورة الإعلان رقم '+n,adLoadErr)}
    }
    if(status)status.textContent='متصل بقاعدة البيانات السحابية';
  }catch(err){
