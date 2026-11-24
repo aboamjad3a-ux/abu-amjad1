@@ -837,20 +837,7 @@ document.querySelectorAll('.ad-slot').forEach(slot=>{slot.addEventListener('clic
      await CLOUD_DOC.set({menuItems,properties:properties.map(({images,image,...rest})=>({...rest,images:[],image:''})),consultationRequests,siteSections,ads:(()=>{try{return JSON.parse(localStorage.getItem('abu_ads')||'[]')}catch{return []}})(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
    }
    // قراءة صور الإعلانات بعد التهيئة العادية أو التهيئة الأولى للسحابة.
-   for(let n=1;n<=2;n++){
-     try{
-       const adImageSnap=await firebaseDb.collection('abuAmjadSite').doc('adImage'+n).get();
-       if(adImageSnap.exists){
-         const adImage=adImageSnap.data()||{};
-         if(adImage.imageData){
-           const saved=JSON.parse(localStorage.getItem('abu_ads')||'[]').filter(a=>String(a.slot)!==String(n));
-           saved.push({slot:String(n),title:adImage.title||'إعلان',url:adImage.imageData,updatedAt:adImage.updatedAt||''});
-           localStorage.setItem('abu_ads',JSON.stringify(saved));
-           applyAds(saved);
-         }
-       }
-     }catch(adLoadErr){console.warn('تعذر تحميل صورة الإعلان رقم '+n,adLoadErr)}
-   }
+   // صور الإعلانات محملة من واجهة API العامة الآمنة أعلاه.
    if(status)status.textContent='متصل بقاعدة البيانات السحابية';
  }catch(err){
    console.error('Firebase cloud load failed:',err);
