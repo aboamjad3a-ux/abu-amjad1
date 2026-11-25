@@ -27,9 +27,10 @@ module.exports = async function handler(req, res) {
       const username = String((req.body || {}).username || '').trim();
       const snap = await ref.get();
       const users = snap.exists && Array.isArray(snap.data().users) ? snap.data().users : [];
-      if (users.length <= 1) return send(res, 400, { ok: false, error: 'يجب الإبقاء على مستخدم مدير واحد على الأقل.' });
+      if (!username) return send(res, 400, { ok: false, error: 'اسم المستخدم مطلوب للحذف.' });
+      // Authentication is controlled by ADMIN_USERNAME / ADMIN_PASSWORD in Vercel.
+      // The Firestore adminUsers list is a legacy/device account list, so it may be empty.
       const next = users.filter(u => u && u.username !== username);
-      if (next.length === users.length) return send(res, 404, { ok: false, error: 'المستخدم غير موجود.' });
       await ref.set({ users: next, updatedAt: new Date().toISOString() });
       return send(res, 200, { ok: true, users: next });
     }
