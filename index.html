@@ -319,9 +319,16 @@ html, body { background: #f3f7fc !important; color: #173451; }
   content:"";position:absolute;inset:7px;border:1px dashed #b7cce2;border-radius:11px;pointer-events:none;
 }
 .ad-slot:hover{transform:translateY(-2px);border-color:#6fa4d8;box-shadow:0 8px 22px rgba(10,55,100,.15)}
-.ad-slot-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#eef6ff;display:none}
+.ad-slot-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#eef6ff;display:none;cursor:zoom-in;transition:transform .25s ease}
 .ad-slot.has-image .ad-slot-image{display:block}
 .ad-slot.has-image::before{display:none}
+.ad-slot.has-image{cursor:zoom-in}
+.ad-lightbox{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.94);box-sizing:border-box}
+.ad-lightbox.is-open{display:flex}
+.ad-lightbox img{display:block;max-width:100%;max-height:calc(100vh - 36px);width:auto;height:auto;object-fit:contain;border-radius:8px;box-shadow:0 8px 35px rgba(0,0,0,.45)}
+.ad-lightbox-close{position:absolute;top:12px;right:14px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:30px;line-height:1;cursor:pointer}
+.ad-lightbox-close:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:480px){.ad-lightbox{padding:10px}.ad-lightbox img{max-width:100%;max-height:calc(100dvh - 20px)}.ad-lightbox-close{top:8px;right:8px}}
 .ad-placeholder{position:relative;z-index:1;padding:16px 10px;text-align:center;color:#17477a;font-family:Tahoma,Arial,sans-serif;line-height:1.8}
 .ad-placeholder-icon{display:flex;width:42px;height:42px;margin:0 auto 9px;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(145deg,#0d77c9,#10477e);color:#fff;font-size:22px;box-shadow:0 4px 10px rgba(13,91,151,.22)}
 .ad-placeholder strong{display:block;font-size:clamp(13px,1.8vw,17px);font-weight:800;color:#123e70}
@@ -329,7 +336,7 @@ html, body { background: #f3f7fc !important; color: #173451; }
 .ad-slot.has-image .ad-placeholder{display:none}
 @media(max-width:480px){
  .ad-spaces{width:92%;gap:9px;margin:10px auto 22px}
- .ad-slot{min-height:260px;border-radius:12px;cursor:pointer}
+ .ad-slot{min-height:260px;height:clamp(220px,78vw,340px);border-radius:12px;cursor:pointer}
  .ad-slot::before{inset:5px;border-radius:8px}
  .ad-placeholder{padding:12px 5px}
  .ad-placeholder-icon{width:34px;height:34px;margin-bottom:7px;border-radius:10px;font-size:18px}
@@ -470,7 +477,22 @@ const CLOUD_DOC=firebaseReady ? firebaseDb.collection('abuAmjadSite').doc('conte
 const CLOUD_USERS_DOC=firebaseReady ? firebaseDb.collection('abuAmjadSite').doc('adminUsers') : null;
 function applyAds(items){if(!Array.isArray(items))items=[];for(let n=1;n<=2;n++){const ad=items.find(a=>String(a.slot)===String(n)),slot=document.getElementById('adSlot'+n),img=document.getElementById('adSlot'+n+'Image');if(!slot||!img)continue;const url=(ad&&ad.url)||'';if(url){img.src=url;img.alt=(ad&&ad.title)||(n===1?'إعلان خدمات مخ':'الإعلان '+n);slot.classList.add('has-image');slot.setAttribute('aria-label',(ad&&ad.title)||('الإعلان '+n));}else{img.removeAttribute('src');slot.classList.remove('has-image');slot.setAttribute('aria-label','المربع الإعلاني '+n);}}}
 try{applyAds(JSON.parse(localStorage.getItem('abu_ads')||'[]'))}catch(e){}
-document.querySelectorAll('.ad-slot').forEach(slot=>{slot.setAttribute('role','button');slot.setAttribute('tabindex','0');const openAd=()=>{const image=slot.querySelector('img');if(image&&image.src)window.open(image.src,'_blank','noopener');};slot.addEventListener('click',openAd);slot.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAd();}});});
+// نافذة عرض الإعلان بالحجم الكامل داخل الصفحة
+const adLightbox=document.createElement('div');
+adLightbox.className='ad-lightbox';
+adLightbox.setAttribute('role','dialog');
+adLightbox.setAttribute('aria-modal','true');
+adLightbox.setAttribute('aria-label','عرض الإعلان بحجم كبير');
+adLightbox.innerHTML='<button type="button" class="ad-lightbox-close" aria-label="إغلاق">×</button><img alt="صورة الإعلان مكبرة">';
+document.body.appendChild(adLightbox);
+const adLightboxImage=adLightbox.querySelector('img');
+const adLightboxClose=adLightbox.querySelector('.ad-lightbox-close');
+function closeAdLightbox(){adLightbox.classList.remove('is-open');adLightboxImage.removeAttribute('src');document.body.style.overflow='';}
+function openAdLightbox(image){if(!image||!image.src)return;adLightboxImage.src=image.src;adLightboxImage.alt=image.alt||'صورة الإعلان';adLightbox.classList.add('is-open');document.body.style.overflow='hidden';adLightboxClose.focus();}
+adLightboxClose.addEventListener('click',closeAdLightbox);
+adLightbox.addEventListener('click',e=>{if(e.target===adLightbox)closeAdLightbox();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&adLightbox.classList.contains('is-open'))closeAdLightbox();});
+document.querySelectorAll('.ad-slot').forEach(slot=>{slot.setAttribute('role','button');slot.setAttribute('tabindex','0');slot.setAttribute('aria-haspopup','dialog');const openAd=()=>openAdLightbox(slot.querySelector('img'));slot.addEventListener('click',openAd);slot.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAd();}});});
 
 async function hashAdminPassword(password){
   const bytes=new TextEncoder().encode(String(password));
